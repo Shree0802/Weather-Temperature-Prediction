@@ -1,5 +1,5 @@
 """
-Streamlit Web Application for Weather Data Analysis and Temperature Prediction.
+Streamlit Web Application for Weather Data Analysis, Time-Series Forecasting, and Temperature Prediction.
 Features multi-page sidebar navigation, custom glassmorphism CSS, interactive Plotly visualizations,
 and real-time Machine Learning temperature inference.
 """
@@ -10,6 +10,7 @@ import sys
 import pandas as pd
 import numpy as np
 import plotly.express as px
+import plotly.graph_objects as go
 import streamlit as st
 
 # Add project root directory to python path
@@ -33,14 +34,14 @@ from src.visualization import (
 # Streamlit Page Configuration
 # -----------------------------------------------------------------------------
 st.set_page_config(
-    page_title="Weather ML - Temperature Intelligence Studio",
+    page_title="Weather ML - Temperature Intelligence & Forecasting Studio",
     page_icon="🌤️",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
 # -----------------------------------------------------------------------------
-# Ultra-Modern High-Impact CSS Styling (Glassmorphism + Neon Accents + Typography)
+# Custom CSS Styling (Glassmorphism + Dark Mode Aesthetics)
 # -----------------------------------------------------------------------------
 CUSTOM_CSS = """
 <style>
@@ -50,13 +51,11 @@ CUSTOM_CSS = """
         font-family: 'Plus Jakarta Sans', sans-serif;
     }
 
-    /* Main background with deep dark slate gradient */
     .stApp {
         background: radial-gradient(circle at top right, #1E1B4B 0%, #0F172A 40%, #090D16 100%);
         color: #F8FAFC;
     }
 
-    /* Sidebar container styling */
     [data-testid="stSidebar"] {
         background: rgba(15, 23, 42, 0.85) !important;
         backdrop-filter: blur(16px);
@@ -64,7 +63,6 @@ CUSTOM_CSS = """
         border-right: 1px solid rgba(255, 255, 255, 0.08);
     }
 
-    /* Brand Header Box */
     .brand-box {
         display: flex;
         align-items: center;
@@ -94,7 +92,6 @@ CUSTOM_CSS = """
         font-weight: 500;
     }
 
-    /* Custom Glassmorphism Metric Card */
     .metric-card {
         position: relative;
         background: rgba(30, 41, 59, 0.55);
@@ -145,7 +142,6 @@ CUSTOM_CSS = """
         font-weight: 500;
     }
 
-    /* Prediction Terminal Card */
     .prediction-card {
         background: linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(30, 41, 59, 0.95) 100%);
         border: 1.5px solid rgba(56, 189, 248, 0.4);
@@ -175,7 +171,6 @@ CUSTOM_CSS = """
         font-weight: 600;
     }
 
-    /* High Impact Hero Banner */
     .hero-banner {
         position: relative;
         background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
@@ -187,16 +182,6 @@ CUSTOM_CSS = """
         margin-bottom: 30px;
         box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
         overflow: hidden;
-    }
-    .hero-banner::after {
-        content: '';
-        position: absolute;
-        top: -50%;
-        right: -10%;
-        width: 300px;
-        height: 300px;
-        background: radial-gradient(circle, rgba(56, 189, 248, 0.15) 0%, transparent 70%);
-        pointer-events: none;
     }
     .hero-title {
         font-size: 3rem;
@@ -216,7 +201,6 @@ CUSTOM_CSS = """
         font-weight: 400;
     }
 
-    /* Badge Pills */
     .tech-badge {
         display: inline-block;
         background: rgba(139, 92, 246, 0.12);
@@ -227,34 +211,8 @@ CUSTOM_CSS = """
         font-size: 0.85rem;
         font-weight: 600;
         margin: 4px;
-        transition: all 0.2s ease;
-    }
-    .tech-badge:hover {
-        background: rgba(139, 92, 246, 0.25);
-        border-color: #C084FC;
     }
 
-    /* Tabs Styling */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 8px;
-        background: rgba(15, 23, 42, 0.5);
-        padding: 6px;
-        border-radius: 14px;
-        border: 1px solid rgba(255, 255, 255, 0.06);
-    }
-    .stTabs [data-baseweb="tab"] {
-        border-radius: 10px;
-        padding: 8px 18px;
-        font-weight: 600;
-        color: #94A3B8;
-    }
-    .stTabs [aria-selected="true"] {
-        background: linear-gradient(135deg, #38BDF8 0%, #6366F1 100%) !important;
-        color: #FFFFFF !important;
-        box-shadow: 0 4px 15px -3px rgba(56, 189, 248, 0.4);
-    }
-
-    /* Pulsing Green Dot */
     .pulse-dot {
         display: inline-block;
         width: 8px;
@@ -303,7 +261,7 @@ st.sidebar.markdown(
         <div class="brand-icon">🌤️</div>
         <div>
             <div class="brand-title">Weather ML</div>
-            <div class="brand-sub">AI Temperature Forecast</div>
+            <div class="brand-sub">Time Series & AI Forecast</div>
         </div>
     </div>
     """,
@@ -315,8 +273,8 @@ page = st.sidebar.radio(
     options=[
         "🏠 Home",
         "📊 Dashboard",
-        "🔍 EDA",
-        "🔮 Prediction",
+        "🔍 EDA & Time Series",
+        "🔮 Prediction & Forecasting",
         "📈 Model Performance",
         "ℹ️ About",
     ],
@@ -328,7 +286,7 @@ st.sidebar.markdown(
     """
     <div style="background: rgba(30, 41, 59, 0.4); padding: 14px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.06); font-size: 0.85rem;">
         <div style="margin-bottom: 6px;"><span class="pulse-dot"></span><b>SYSTEM ONLINE</b></div>
-        <div style="color: #94A3B8;"><b>Dataset:</b> 5 Years (Historical)</div>
+        <div style="color: #94A3B8;"><b>Time Series:</b> 5 Years Daily</div>
         <div style="color: #94A3B8;"><b>Active Model:</b> {}</div>
         <div style="color: #94A3B8;"><b>Accuracy (R²):</b> {}</div>
     </div>
@@ -347,11 +305,11 @@ if page == "🏠 Home":
     st.markdown(
         """
         <div class="hero-banner">
-            <div class="hero-title">Weather Intelligence & Temperature Prediction Engine</div>
+            <div class="hero-title">Weather Data Analysis & Temperature Forecasting Engine</div>
             <div class="hero-sub">
-                A high-precision Machine Learning ecosystem built with Python and Streamlit.
-                Analyzing historical meteorological patterns to forecast future temperature trajectories
-                with automated feature engineering and ensemble model benchmarks.
+                A complete Machine Learning and Time-Series system built with Python & Streamlit.
+                Combining historical time series decomposition, moving averages, autoregressive lag features,
+                and basic/ensemble regression techniques for high-precision temperature forecasting.
             </div>
         </div>
         """,
@@ -361,13 +319,13 @@ if page == "🏠 Home":
     col1, col2 = st.columns([3, 2])
 
     with col1:
-        st.subheader("🎯 Core Objectives")
+        st.subheader("🎯 Core Capabilities & Methodologies")
         st.markdown(
             """
-            - **Automated Data Pipeline**: Robust missing value median imputation, duplicate removal, IQR outlier filtering, and temporal breakdown (`Year`, `Month`, `Day`, `Week`, `DayOfWeek`).
-            - **Exploratory Visualizations**: Deep statistical insights covering temperature dynamics, humidity inverse curves, pressure fluctuations, and precipitation correlations.
-            - **Ensemble ML Suite**: Comparative benchmark across 5 algorithms (Linear Regression, Decision Trees, Random Forests, Gradient Boosting, XGBoost).
-            - **Real-Time AI Inference**: Instantaneous temperature prediction with 95% confidence interval estimation.
+            - **Time Series Feature Engineering**: Autoregressive temperature lags (`Temp_Lag1`, `Temp_Lag7`), 7-day/30-day rolling moving averages (`Temp_Rolling7_Mean`), and seasonal sine/cosine cycles (`Sin_DayOfYear`).
+            - **Exploratory Data Analysis**: Trendline smoothing, correlation matrices, IQR outlier filtering, and seasonal distribution boxplots.
+            - **Regression Modeling Suite**: Benchmark across 5 algorithms (Linear Regression, Decision Trees, Random Forests, Gradient Boosting, XGBoost).
+            - **Future Multi-Step Forecasting**: Autoregressive temperature projection into the future with 95% confidence bands.
             """
         )
 
@@ -390,15 +348,15 @@ if page == "🏠 Home":
 
     with col2:
         st.subheader("⚡ Quick Navigation")
-        st.info("Explore dataset statistics, interactive charts, and AI temperature predictions.")
+        st.info("Explore dataset statistics, time-series moving averages, and future temperature trends.")
 
         st.markdown(
             """
             <div style="background: rgba(30, 41, 59, 0.5); padding: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.08);">
-                <div style="margin-bottom: 10px;">📊 <b>Dashboard</b> — Key KPI metric cards & overview charts</div>
-                <div style="margin-bottom: 10px;">🔍 <b>EDA</b> — Dynamic filtering, correlation heatmap & data export</div>
-                <div style="margin-bottom: 10px;">🔮 <b>Prediction</b> — Real-time temperature ML inference terminal</div>
-                <div>📈 <b>Model Performance</b> — Leaderboard metrics & diagnostic plots</div>
+                <div style="margin-bottom: 10px;">📊 <b>Dashboard</b> — Historical KPI cards & condition breakdown</div>
+                <div style="margin-bottom: 10px;">🔍 <b>EDA & Time Series</b> — Moving averages, lag analysis & data export</div>
+                <div style="margin-bottom: 10px;">🔮 <b>Prediction & Forecasting</b> — Single-day prediction & 14-day future trend forecast</div>
+                <div>📈 <b>Model Performance</b> — Metric comparison table & diagnostic plots</div>
             </div>
             """,
             unsafe_allow_html=True,
@@ -412,7 +370,6 @@ elif page == "📊 Dashboard":
     st.title("📊 Meteorological Key Performance Indicators")
     st.caption("Real-time summary of historical daily weather metrics and atmospheric trends.")
 
-    # Metric Cards Row
     mcol1, mcol2, mcol3, mcol4, mcol5, mcol6 = st.columns(6)
 
     total_records = len(df)
@@ -490,11 +447,10 @@ elif page == "📊 Dashboard":
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # Interactive Dashboard Charts
     dcol1, dcol2 = st.columns([2, 1])
 
     with dcol1:
-        st.subheader("🌡️ Historical Temperature Trend")
+        st.subheader("🌡️ Historical Temperature Time Series")
         fig_temp = create_plotly_line_chart(
             df, x_col="Date", y_col="Temperature", title="Daily Temperature Trend Over Time", color_hex="#38BDF8"
         )
@@ -519,14 +475,13 @@ elif page == "📊 Dashboard":
 
 
 # =============================================================================
-# 3. EDA PAGE
+# 3. EDA & TIME SERIES PAGE
 # =============================================================================
-elif page == "🔍 EDA":
-    st.title("🔍 Exploratory Data Analysis & Filter Engine")
-    st.caption("Apply interactive date/month filters, explore dynamic charts, and download processed data.")
+elif page == "🔍 EDA & Time Series":
+    st.title("🔍 Exploratory Data Analysis & Time Series Trends")
+    st.caption("Perform statistical exploration, analyze moving average trendlines, and inspect correlations.")
 
-    # Interactive Filters Box
-    with st.expander("🎛️ Data Filters & Date Controls", expanded=True):
+    with st.expander("🎛️ Interactive Data & Date Filters", expanded=True):
         fcol1, fcol2, fcol3 = st.columns(3)
 
         with fcol1:
@@ -551,7 +506,6 @@ elif page == "🔍 EDA":
                 "Filter by Weather Condition", options=cond_options, default=cond_options
             )
 
-    # Apply Filters
     filtered_df = df.copy()
     if date_range and len(date_range) == 2:
         start_d, end_d = date_range
@@ -566,15 +520,45 @@ elif page == "🔍 EDA":
     if conds_selected and "Weather Condition" in filtered_df.columns:
         filtered_df = filtered_df[filtered_df["Weather Condition"].isin(conds_selected)]
 
-    st.markdown(f"**Filtered dataset contains {len(filtered_df):,} records.**")
+    st.markdown(f"**Filtered dataset contains {len(filtered_df):,} daily records.**")
 
-    # Dynamic Column Visualizer Tabs
-    tab1, tab2, tab3, tab4 = st.tabs(
-        ["📈 Dynamic Chart Explorer", "🔥 Correlation Heatmap", "📦 Feature Distributions", "📄 Summary Statistics"]
+    tab1, tab2, tab3, tab4, tab5 = st.tabs(
+        [
+            "📈 Moving Averages & Smoothing",
+            "📊 Dynamic Chart Explorer",
+            "🔥 Feature Correlation Heatmap",
+            "📦 Distributions & Outliers",
+            "📄 Summary Statistics",
+        ]
     )
 
     with tab1:
-        st.subheader("Dynamic Multi-Variable Plotter")
+        st.subheader("📈 Time Series Moving Average Trend Smoothing")
+        st.markdown("Comparing daily temperature fluctuations with **7-day** and **30-day** rolling moving averages.")
+
+        fig_ma = go.Figure()
+        fig_ma.add_trace(go.Scatter(
+            x=filtered_df["Date"], y=filtered_df["Temperature"], mode="lines", name="Daily Raw Temp", line=dict(color="rgba(56, 189, 248, 0.4)", width=1)
+        ))
+        if "Temp_Rolling7_Mean" in filtered_df.columns:
+            fig_ma.add_trace(go.Scatter(
+                x=filtered_df["Date"], y=filtered_df["Temp_Rolling7_Mean"], mode="lines", name="7-Day Moving Avg", line=dict(color="#F59E0B", width=2)
+            ))
+        if "Temp_Rolling30_Mean" in filtered_df.columns:
+            fig_ma.add_trace(go.Scatter(
+                x=filtered_df["Date"], y=filtered_df["Temp_Rolling30_Mean"], mode="lines", name="30-Day Moving Avg", line=dict(color="#EC4899", width=2.5)
+            ))
+        fig_ma.update_layout(
+            title="Time Series Temperature Trendline Smoothing",
+            template="plotly_dark",
+            xaxis_title="Date",
+            yaxis_title="Temperature (°C)",
+            font=dict(family="Plus Jakarta Sans, sans-serif")
+        )
+        st.plotly_chart(fig_ma, use_container_width=True)
+
+    with tab2:
+        st.subheader("Dynamic Variable Explorer")
         vcol1, vcol2, vcol3 = st.columns(3)
         with vcol1:
             x_var = st.selectbox("Select X-Axis Feature", options=["Date", "Humidity", "Pressure", "Wind Speed", "Rainfall", "Month"])
@@ -594,12 +578,12 @@ elif page == "🔍 EDA":
 
         st.plotly_chart(fig, use_container_width=True)
 
-    with tab2:
+    with tab3:
         st.subheader("Feature Correlation Matrix")
         fig_corr = create_plotly_correlation_heatmap(filtered_df)
         st.plotly_chart(fig_corr, use_container_width=True)
 
-    with tab3:
+    with tab4:
         st.subheader("Distribution & Outlier Inspection")
         dist_var = st.selectbox("Select Feature for Distribution Plot", options=["Temperature", "Humidity", "Pressure", "Wind Speed", "Rainfall"])
         fig_dist = px.histogram(
@@ -612,14 +596,12 @@ elif page == "🔍 EDA":
         )
         st.plotly_chart(fig_dist, use_container_width=True)
 
-    with tab4:
+    with tab5:
         st.subheader("Filtered Summary Statistics")
-        # FIX: Select only numeric columns before describe to avoid TypeError on Datetime/String columns
         num_df = filtered_df.select_dtypes(include=[np.number])
         summary_stats = num_df.describe().T
         st.dataframe(summary_stats.style.highlight_max(axis=0, color="#1E3A8A"), use_container_width=True)
 
-    # Download Dataset Section
     st.markdown("---")
     st.subheader("📥 Export Data")
     csv_bytes = filtered_df.to_csv(index=False).encode("utf-8")
@@ -632,73 +614,122 @@ elif page == "🔍 EDA":
 
 
 # =============================================================================
-# 4. PREDICTION PAGE
+# 4. PREDICTION & FORECASTING PAGE
 # =============================================================================
-elif page == "🔮 Prediction":
-    st.title("🔮 Real-Time Temperature Inference Engine")
-    st.caption("Configure atmospheric observations on the left to compute instant AI temperature forecasts.")
+elif page == "🔮 Prediction & Forecasting":
+    st.title("🔮 Temperature Prediction & Future Trend Forecasting")
+    st.caption("Perform single-sample real-time inference or generate multi-day future trend projections.")
 
-    pcol1, pcol2 = st.columns([3, 2])
+    tab_p1, tab_p2 = st.tabs(["🔮 Single-Day AI Prediction", "📈 Multi-Day Future Trend Forecast"])
 
-    with pcol1:
-        st.subheader("⚙️ Input Weather Parameters")
+    with tab_p1:
+        pcol1, pcol2 = st.columns([3, 2])
 
-        with st.form("prediction_form"):
-            in_hum = st.slider("Relative Humidity (%)", min_value=20.0, max_value=100.0, value=65.0, step=0.5)
-            in_pres = st.slider("Atmospheric Pressure (hPa)", min_value=980.0, max_value=1040.0, value=1013.25, step=0.25)
-            in_wind = st.slider("Wind Speed (km/h)", min_value=1.0, max_value=60.0, value=14.0, step=0.5)
-            in_rain = st.number_input("Daily Rainfall Volume (mm)", min_value=0.0, max_value=200.0, value=0.0, step=0.1)
+        with pcol1:
+            st.subheader("⚙️ Input Atmospheric Observations")
 
-            icol1, icol2, icol3 = st.columns(3)
-            with icol1:
-                in_month = st.selectbox("Month", options=list(range(1, 13)), index=6, format_func=lambda m: datetime(2026, m, 1).strftime("%B"))
-            with icol2:
-                in_day = st.number_input("Day of Month", min_value=1, max_value=31, value=15)
-            with icol3:
-                cond_list = ["Clear", "Sunny", "Cloudy", "Rainy", "Thunderstorm", "Foggy"]
-                in_cond = st.selectbox("Weather Condition", options=cond_list, index=1)
+            with st.form("single_prediction_form"):
+                in_hum = st.slider("Relative Humidity (%)", min_value=20.0, max_value=100.0, value=65.0, step=0.5)
+                in_pres = st.slider("Atmospheric Pressure (hPa)", min_value=980.0, max_value=1040.0, value=1013.25, step=0.25)
+                in_wind = st.slider("Wind Speed (km/h)", min_value=1.0, max_value=60.0, value=14.0, step=0.5)
+                in_rain = st.number_input("Daily Rainfall Volume (mm)", min_value=0.0, max_value=200.0, value=0.0, step=0.1)
 
-            submit_btn = st.form_submit_button("⚡ Predict Temperature Now", use_container_width=True)
+                icol1, icol2, icol3 = st.columns(3)
+                with icol1:
+                    in_month = st.selectbox("Month", options=list(range(1, 13)), index=6, format_func=lambda m: datetime(2026, m, 1).strftime("%B"))
+                with icol2:
+                    in_day = st.number_input("Day of Month", min_value=1, max_value=31, value=15)
+                with icol3:
+                    cond_list = ["Clear", "Sunny", "Cloudy", "Rainy", "Thunderstorm", "Foggy"]
+                    in_cond = st.selectbox("Weather Condition", options=cond_list, index=1)
 
-    with pcol2:
-        st.subheader("🎯 Forecast Terminal")
+                submit_btn = st.form_submit_button("⚡ Predict Temperature Now", use_container_width=True)
 
-        if submit_btn:
-            res = predictor.predict(
-                humidity=in_hum,
-                pressure=in_pres,
-                wind_speed=in_wind,
-                rainfall=in_rain,
-                month=in_month,
-                day=in_day,
-                weather_condition=in_cond,
-            )
+        with pcol2:
+            st.subheader("🎯 Single-Day Forecast Result")
 
-            pred_temp_c = res["predicted_temperature"]
-            pred_temp_f = round(pred_temp_c * 9/5 + 32, 2)
-            c_low = res["confidence_lower"]
-            c_high = res["confidence_upper"]
+            if submit_btn:
+                res = predictor.predict(
+                    humidity=in_hum,
+                    pressure=in_pres,
+                    wind_speed=in_wind,
+                    rainfall=in_rain,
+                    month=in_month,
+                    day=in_day,
+                    weather_condition=in_cond,
+                )
 
-            st.markdown(
-                f"""
-                <div class="prediction-card">
-                    <span class="pred-badge">● PREDICTION GENERATED</span>
-                    <div style="font-size: 0.85rem; color: #94A3B8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 12px;">ESTIMATED DAILY TEMPERATURE</div>
-                    <div class="pred-temp-main">{pred_temp_c}°C</div>
-                    <div style="font-size: 1.3rem; color: #CBD5E1; font-weight: 600; margin-bottom: 15px;">({pred_temp_f}°F)</div>
-                    <hr style="border-color: rgba(255,255,255,0.1); margin: 18px 0;">
-                    <div style="font-size: 0.9rem; color: #94A3B8; line-height: 1.7; text-align: left; padding: 0 10px;">
-                        <b>• 95% Confidence Bounds:</b> {c_low}°C to {c_high}°C<br>
-                        <b>• Model Selected:</b> {res['model_used']}<br>
-                        <b>• R² Accuracy Metric:</b> {round(res['r2_score'], 4)}<br>
-                        <b>• Inference Latency:</b> {res['prediction_time_ms']} ms
+                pred_temp_c = res["predicted_temperature"]
+                pred_temp_f = round(pred_temp_c * 9/5 + 32, 2)
+                c_low = res["confidence_lower"]
+                c_high = res["confidence_upper"]
+
+                st.markdown(
+                    f"""
+                    <div class="prediction-card">
+                        <span class="pred-badge">● PREDICTION GENERATED</span>
+                        <div style="font-size: 0.85rem; color: #94A3B8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 12px;">ESTIMATED DAILY TEMPERATURE</div>
+                        <div class="pred-temp-main">{pred_temp_c}°C</div>
+                        <div style="font-size: 1.3rem; color: #CBD5E1; font-weight: 600; margin-bottom: 15px;">({pred_temp_f}°F)</div>
+                        <hr style="border-color: rgba(255,255,255,0.1); margin: 18px 0;">
+                        <div style="font-size: 0.9rem; color: #94A3B8; line-height: 1.7; text-align: left; padding: 0 10px;">
+                            <b>• 95% Confidence Bounds:</b> {c_low}°C to {c_high}°C<br>
+                            <b>• Model Selected:</b> {res['model_used']}<br>
+                            <b>• R² Accuracy Metric:</b> {round(res['r2_score'], 4)}<br>
+                            <b>• Inference Latency:</b> {res['prediction_time_ms']} ms
+                        </div>
                     </div>
-                </div>
-                """,
-                unsafe_allow_html=True,
+                    """,
+                    unsafe_allow_html=True,
+                )
+            else:
+                st.info("Adjust the parameters on the left and click **Predict Temperature Now**.")
+
+    with tab_p2:
+        st.subheader("📈 Multi-Step Future Temperature Projection")
+        st.markdown("Autoregressively forecast daily temperature trends into the future using machine learning.")
+
+        f_days = st.slider("Select Horizon (Days into Future)", min_value=7, max_value=30, value=14, step=1)
+        
+        if st.button("🚀 Generate Multi-Step Forecast", use_container_width=True):
+            forecast_df = predictor.predict_future_trend(n_days=f_days)
+
+            # Interactive Plotly Future Projection Chart with Confidence Interval Area
+            fig_f = go.Figure()
+
+            # Confidence Band
+            fig_f.add_trace(go.Scatter(
+                x=list(forecast_df["Date"]) + list(forecast_df["Date"])[::-1],
+                y=list(forecast_df["Confidence_Upper"]) + list(forecast_df["Confidence_Lower"])[::-1],
+                fill="toself",
+                fillcolor="rgba(56, 189, 248, 0.15)",
+                line=dict(color="rgba(255,255,255,0)"),
+                hoverinfo="skip",
+                name="95% Confidence Interval"
+            ))
+
+            # Main Prediction Line
+            fig_f.add_trace(go.Scatter(
+                x=forecast_df["Date"],
+                y=forecast_df["Forecasted_Temperature"],
+                mode="lines+markers",
+                name="Forecasted Temperature (°C)",
+                line=dict(color="#38BDF8", width=3),
+                marker=dict(size=6, color="#C084FC")
+            ))
+
+            fig_f.update_layout(
+                title=f"Autoregressive {f_days}-Day Future Temperature Forecast",
+                template="plotly_dark",
+                xaxis_title="Future Date",
+                yaxis_title="Forecasted Temperature (°C)",
+                font=dict(family="Plus Jakarta Sans, sans-serif")
             )
-        else:
-            st.info("Adjust the weather parameters on the left and click **Predict Temperature Now** to execute inference.")
+
+            st.plotly_chart(fig_f, use_container_width=True)
+
+            st.subheader("📋 Forecast Summary Table")
+            st.dataframe(forecast_df.style.highlight_max(subset=["Forecasted_Temperature"], color="#065F46"), use_container_width=True)
 
 
 # =============================================================================
@@ -710,7 +741,6 @@ elif page == "📈 Model Performance":
 
     meta = predictor.metadata
 
-    # Best Model Banner
     st.markdown(
         f"""
         <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(6, 95, 70, 0.25) 100%); border: 1.5px solid #10B981; border-radius: 20px; padding: 22px; margin-bottom: 25px; box-shadow: 0 10px 30px -10px rgba(16, 185, 129, 0.3);">
