@@ -1,5 +1,6 @@
 # Weather Data Analysis & Temperature Prediction ML System 🌤️🌡️
 
+[![Live Demo](https://img.shields.io/badge/Streamlit-Live%20Demo-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)](https://weather-temperature-prediction-3jgs3a5gmtyunyqdyjdwxw.streamlit.app/)
 [![Python](https://img.shields.io/badge/Python-3.13-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.25+-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)](https://streamlit.io/)
 [![Scikit-Learn](https://img.shields.io/badge/Scikit--Learn-1.2+-F7931E?style=for-the-badge&logo=scikit-learn&logoColor=white)](https://scikit-learn.org/)
@@ -7,6 +8,12 @@
 [![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
 
 An end-to-end production-grade Machine Learning system and interactive Streamlit web application that analyzes multi-year historical weather datasets and predicts daily temperature trends with high precision.
+
+---
+
+## 🔗 Live Application Link
+
+🚀 **Deployed Live Web App**: [https://weather-temperature-prediction-3jgs3a5gmtyunyqdyjdwxw.streamlit.app/](https://weather-temperature-prediction-3jgs3a5gmtyunyqdyjdwxw.streamlit.app/)
 
 ---
 
@@ -19,15 +26,17 @@ This project was built from scratch following modern ML engineering best practic
 ## ✨ Features
 
 - **Automated Data Pipeline**: Seamless handling of missing values, duplicates, outliers (IQR clipping), date feature decomposition (`Year`, `Month`, `Day`, `Week`, `DayOfWeek`), and categorical label encoding.
+- **Time Series Feature Engineering**: Autoregressive temperature lags (`Temp_Lag1`, `Temp_Lag7`), 7-day/30-day rolling moving averages, and seasonal sine/cosine terms (`Sin_DayOfYear`).
+- **Multi-Step Future Forecasting**: Autoregressively project temperature trends 7 to 30 days into the future with 95% confidence interval bounds.
 - **Exploratory Data Analysis (EDA)**: Automatic generation of 10+ professional static figures (`assets/images/`) and dynamic Plotly charts.
 - **Machine Learning Benchmark**: Evaluates Linear Regression, Decision Tree, Random Forest, Gradient Boosting, and XGBoost/ExtraTrees.
 - **Automated Model Selection**: Compares test metrics ($R^2$, MAE, MSE, RMSE, 5-Fold Cross Validation) and automatically serializes the best performing model (`models/best_model.pkl`).
 - **Interactive Web App**: 6-page Streamlit dashboard featuring:
   - 🏠 **Home**: Landing page, technology stack badges, project objectives.
   - 📊 **Dashboard**: KPI metric cards (Total Records, Avg/Max/Min Temp, Avg Humidity, Avg Pressure) and key charts.
-  - 🔍 **EDA**: Dynamic column plotter, interactive filters (Date range, Month, Weather Condition), and CSV dataset export.
-  - 🔮 **Prediction**: User parameter sliders, instant ML temperature inference, 95% confidence intervals, and latency metrics.
-  - 📈 **Model Performance**: Metric comparison table, feature importance, residual analysis, and Actual vs Predicted alignment plots.
+  - 🔍 **EDA & Time Series**: Moving average smoothing, dynamic column plotter, interactive filters, and CSV export.
+  - 🔮 **Prediction & Forecasting**: Single-day prediction & 14-day future trend forecast.
+  - 📈 **Model Performance**: Metric comparison leaderboard, feature importance, residual analysis, and Actual vs Predicted alignment plots.
   - ℹ️ **About**: Architectural workflow diagram, pipeline explanation, future scope, and author info.
 
 ---
@@ -56,6 +65,7 @@ Weather-Temperature-Prediction/
 ├── app.py                     # Main Streamlit Web Application
 ├── requirements.txt           # Python dependencies
 ├── README.md                  # Comprehensive project documentation
+├── DEPLOYMENT.md              # Deployment guide
 ├── LICENSE                    # MIT License
 ├── .gitignore                 # Files to exclude from version control
 ├── packages.txt               # System packages for deployment
@@ -76,9 +86,9 @@ Weather-Temperature-Prediction/
 │
 ├── src/
 │   ├── __init__.py
-│   ├── preprocessing.py       # Data cleaning & feature engineering
+│   ├── preprocessing.py       # Data cleaning & time-series lag feature engineering
 │   ├── train.py               # Model training, CV & benchmark
-│   ├── predict.py             # Real-time inference engine
+│   ├── predict.py             # Multi-step autoregressive future forecaster
 │   ├── utils.py               # Helper paths & synthetic generator
 │   └── visualization.py       # Matplotlib & Plotly chart generators
 │
@@ -100,7 +110,7 @@ Weather-Temperature-Prediction/
 
 1. **Clone the Repository**:
    ```bash
-   git clone https://github.com/your-username/Weather-Temperature-Prediction.git
+   git clone https://github.com/Shree0802/Weather-Temperature-Prediction.git
    cd Weather-Temperature-Prediction
    ```
 
@@ -146,24 +156,13 @@ All models were evaluated using 5-Fold Cross Validation and Test Set split (80/2
 
 | Model | $R^2$ Score | MAE (°C) | RMSE (°C) | CV Score ($R^2$) |
 |---|---|---|---|---|
-| **Random Forest Regressor** | **0.9985** | **0.3204** | **0.4215** | **0.9982** |
-| Gradient Boosting Regressor | 0.9978 | 0.3850 | 0.5012 | 0.9975 |
-| XGBoost Regressor | 0.9972 | 0.4120 | 0.5401 | 0.9968 |
-| Decision Tree Regressor | 0.9912 | 0.7250 | 0.9410 | 0.9901 |
-| Linear Regression | 0.9654 | 1.8420 | 2.3150 | 0.9642 |
+| **Linear Regression** | **1.0000** | **0.0000** | **0.0000** | **1.0000** |
+| Gradient Boosting Regressor | 0.9991 | 0.2177 | 0.3183 | 0.9987 |
+| XGBoost Regressor | 0.9989 | 0.2289 | 0.3438 | 0.9984 |
+| Random Forest Regressor | 0.9984 | 0.2648 | 0.4164 | 0.9978 |
+| Decision Tree Regressor | 0.9942 | 0.5860 | 0.7906 | 0.9936 |
 
-> **Best Model**: **Random Forest Regressor** (Serialized to `models/best_model.pkl`).
-
----
-
-## 🖼️ Application Screenshots
-
-| Page | Preview |
-|---|---|
-| **Dashboard Page** | High-level KPI metrics & daily temperature trends |
-| **EDA Page** | Dynamic chart explorer & custom date/month filters |
-| **Prediction Page** | Real-time temperature inference with confidence bounds |
-| **Model Performance** | Model comparison table & feature importance charts |
+> **Best Model**: **Linear Regression** (Serialized to `models/best_model.pkl`).
 
 ---
 
@@ -183,5 +182,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 👨‍💻 Author
 
-**Senior Machine Learning Engineer**  
+**Shree0802**  
 *Built with Python, Scikit-Learn & Streamlit* 🚀
